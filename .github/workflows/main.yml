@@ -1,0 +1,48 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Generate PDFs
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+    paths:
+      - rules.md
+  pull_request:
+    branches: [ master ]
+    paths:
+      - rules.md
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  convert_pdf:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-20.04
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+    
+    # Install pandoc and latex packages
+    - name: Install Pandoc and LaTeX
+      run: |
+          sudo apt-get install -y pandoc  texlive-latex-base texlive-xetex ttf-mscorefonts-installer
+
+    - name: Run pandoc for PDF
+      run: pandoc -H pandoc/title.tex -V mainfont="DejaVu Sans" -V geometry:a4paper -V geometry:margin=2cm -V linkcolor:blue --pdf-engine=xelatex --output=rules.pdf rules.md
+
+    - name: Run pandoc for HTML
+      run: pandoc --output=rules.html rules.md
+      
+    - name: Commit results
+      run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add rules.pdf || echo "No changes to commit"
+          git add rules.html || echo "No changes to commit"
+          git commit -m 'Auto-generated rules.pdf' || echo "No changes to commit"
+          git push origin || echo "No changes to commit"
